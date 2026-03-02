@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="A kawaii virtual pet simulator — feed, play, and care for your adorable digital companion!" />
+  <title>Virtual Pet Simulator 🐾</title>
+
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐾</text></svg>" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- Dynamic background (changes with day/night) -->
+  <div class="app-bg time-day" id="app-bg"></div>
+
+  <!-- Time of day label -->
+  <div id="time-label">☀️ Day</div>
+
+
+  <!-- ═══════════════════════════════════════════════
+       SCREEN 1: PET SELECTION
+  ════════════════════════════════════════════════ -->
+  <div id="select-screen">
+
+    <header class="app-header">
+      <h1 class="app-title">🐾 Virtual Pet</h1>
+      <p class="app-subtitle">Choose your companion and begin your adventure!</p>
+    </header>
+
+    <div class="panel select-panel">
+
+      <h2 class="select-title">Choose Your Pet ✨</h2>
+
+      <!-- Pet type grid -->
+      <div class="pet-grid" role="listbox" aria-label="Select pet type">
+        <div class="pet-select-card selected" data-type="cat" role="option" aria-selected="true" tabindex="0">
+          <span class="pet-select-emoji">🐱</span>
+          <span class="pet-select-name">Cat</span>
+        </div>
+        <div class="pet-select-card" data-type="dog" role="option" tabindex="0">
+          <span class="pet-select-emoji">🐶</span>
+          <span class="pet-select-name">Dog</span>
+        </div>
+        <div class="pet-select-card" data-type="bunny" role="option" tabindex="0">
+          <span class="pet-select-emoji">🐰</span>
+          <span class="pet-select-name">Bunny</span>
+        </div>
+        <div class="pet-select-card" data-type="bear" role="option" tabindex="0">
+          <span class="pet-select-emoji">🐻</span>
+          <span class="pet-select-name">Bear</span>
+        </div>
+        <div class="pet-select-card" data-type="fox" role="option" tabindex="0">
+          <span class="pet-select-emoji">🦊</span>
+          <span class="pet-select-name">Fox</span>
+        </div>
+      </div>
+
+      <!-- Selected pet preview -->
+      <div class="select-preview">
+        <span id="selected-preview">🐱</span>
+        <p id="selected-personality">Aloof but secretly loving 💕</p>
+      </div>
+
+      <!-- Name input -->
+      <div class="name-input-row">
+        <label for="pet-name-input">Name:</label>
+        <input
+          type="text"
+          id="pet-name-input"
+          class="pet-name-input"
+          placeholder="Enter a name..."
+          maxlength="12"
+          value="Mochi"
+          aria-label="Pet name"
+        />
+      </div>
+
+      <button class="btn-primary" id="btn-start-game" aria-label="Start the game">
+        Start Adventure! 🌟
+      </button>
+
+    </div>
+  </div><!-- /#select-screen -->
+
+
+  <!-- ═══════════════════════════════════════════════
+       SCREEN 2: GAME SCREEN
+  ════════════════════════════════════════════════ -->
+  <div id="game-screen" style="display:none">
+
+    <!-- Pet name + info bar -->
+    <div class="panel pet-info-bar" role="status" aria-live="polite">
+      <div class="pet-info-left">
+        <span id="pet-name-display">Mochi</span>
+        <span id="pet-level">Lv. 1</span>
+        <span id="pet-age">Day 0</span>
+      </div>
+      <div class="pet-info-right">
+        <span id="pet-state-label">😊 Happy</span>
+        <button id="btn-new-pet" aria-label="Get a new pet">🐾 New Pet</button>
+      </div>
+    </div>
+
+    <!-- Pet Stage (the animated character) -->
+    <div class="pet-container">
+      <div class="pet-stage anim-bounce" id="pet-stage" style="--pet-glow: rgba(255,229,170,0.4)">
+        <span class="pet-emoji" id="pet-emoji" aria-label="Virtual pet character">🐱</span>
+        <span class="pet-mood"  id="pet-mood">^‿^</span>
+
+        <!-- Shown when pet dies -->
+        <div id="dead-overlay" role="alert" aria-label="Your pet has passed away">
+          <p>💔 Your pet is gone...</p>
+          <button id="btn-revive" aria-label="Get a new pet">Get New Pet</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stat Bars -->
+    <div class="panel stats-panel" aria-label="Pet statistics">
+
+      <div class="stat-row">
+        <span class="stat-label"><span>🍽️</span> Fullness</span>
+        <div class="bar-track" role="progressbar" aria-label="Hunger" aria-valuenow="70" aria-valuemin="0" aria-valuemax="100">
+          <div class="bar-fill" id="hunger-fill" style="width:70%"></div>
+        </div>
+        <span class="stat-val" id="hunger-val">70%</span>
+      </div>
+
+      <div class="stat-row">
+        <span class="stat-label"><span>😊</span> Happiness</span>
+        <div class="bar-track" role="progressbar" aria-label="Happiness">
+          <div class="bar-fill" id="happiness-fill" style="width:80%"></div>
+        </div>
+        <span class="stat-val" id="happiness-val">80%</span>
+      </div>
+
+      <div class="stat-row">
+        <span class="stat-label"><span>⚡</span> Energy</span>
+        <div class="bar-track" role="progressbar" aria-label="Energy">
+          <div class="bar-fill" id="energy-fill" style="width:70%"></div>
+        </div>
+        <span class="stat-val" id="energy-val">70%</span>
+      </div>
+
+      <div class="stat-row">
+        <span class="stat-label"><span>💚</span> Health</span>
+        <div class="bar-track" role="progressbar" aria-label="Health">
+          <div class="bar-fill" id="health-fill" style="width:100%"></div>
+        </div>
+        <span class="stat-val" id="health-val">100%</span>
+      </div>
+
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="panel actions-panel" role="group" aria-label="Pet actions">
+      <div class="actions-grid">
+
+        <button class="action-btn btn-feed" id="btn-feed" aria-label="Feed your pet">
+          <span class="btn-icon">🍎</span>
+          <span class="btn-label">Feed</span>
+        </button>
+
+        <button class="action-btn btn-play" id="btn-play" aria-label="Play with your pet">
+          <span class="btn-icon">🎾</span>
+          <span class="btn-label">Play</span>
+        </button>
+
+        <button class="action-btn btn-sleep" id="btn-sleep" aria-label="Put your pet to sleep">
+          <span class="btn-icon">😴</span>
+          <span class="btn-label">Sleep</span>
+        </button>
+
+      </div>
+    </div>
+
+    <!-- Achievements panel -->
+    <div class="panel achievements-panel" aria-label="Achievements">
+      <div class="achievements-title">🏆 Achievements</div>
+      <div id="achievements-list" role="list" aria-label="Unlocked achievements">
+        <!-- Populated dynamically by ui.js -->
+      </div>
+    </div>
+
+  </div><!-- /#game-screen -->
+
+
+  <!-- Toast notification container -->
+  <div id="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+
+  <!-- Scripts: pet model → ui → game controller -->
+  <script src="js/pet.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/game.js"></script>
+
+</body>
+</html>
