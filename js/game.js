@@ -115,8 +115,14 @@ class GameController {
   _tick() {
     if (!this.pet) return;
 
+    const wasAsleep = this.pet.state === "sleeping";
     const alert = this.pet.tick();
     this.tickCount++;
+
+    // If pet auto-woke up (energy full), reset the sleep button label
+    if (wasAsleep && this.pet.state !== "sleeping") {
+      this._resetSleepButton();
+    }
 
     // Update UI
     this.ui.render(this.pet);
@@ -131,6 +137,16 @@ class GameController {
 
     // Check achievements
     this._checkTickAchievements();
+  }
+
+  // ── Helper: always keep sleep button label in sync ────────
+  _resetSleepButton() {
+    const btn = document.getElementById("btn-sleep");
+    if (!btn) return;
+    const isSleeping = this.pet && this.pet.state === "sleeping";
+    btn.innerHTML = isSleeping
+      ? '<span class="btn-icon">☀️</span><span class="btn-label">Wake Up</span>'
+      : '<span class="btn-icon">😴</span><span class="btn-label">Sleep</span>';
   }
 
   // ══════════════════════════════════════════════════════════
@@ -164,12 +180,11 @@ class GameController {
     if (this.pet.state === "sleeping") {
       const msg = this.pet.wake();
       this.ui.showToast(msg, "info");
-      document.getElementById("btn-sleep").textContent = "😴 Sleep";
     } else {
       const msg = this.pet.sleep();
       this.ui.showToast(msg, "info");
-      document.getElementById("btn-sleep").textContent = "☀️ Wake Up";
     }
+    this._resetSleepButton();
     this.ui.render(this.pet);
     this.ui.flashButton("btn-sleep");
     this._saveGame();
@@ -248,25 +263,18 @@ class GameController {
       const raw = sessionStorage.getItem("virtual_pet_save");
       if (!raw) { this.ui.showSelectScreen(); return; }
       const data = JSON.parse(raw);
-      this.pet = Pet.fromJSON(data.pet);
+      this.pet = Pet.fromJSON(data.pet);  // fromJSON now sanitizes sleeping state
       this.achievements = new Set(data.achievements || []);
       this.interactionCounts = data.interactionCounts || { feed: 0, play: 0 };
 
-      // Show game screen with loaded pet
       this.ui.showGameScreen();
       this.ui.render(this.pet);
+      this._resetSleepButton();  // Always sync button to actual state
       this.ui.showToast(`🌟 Welcome back! ${this.pet.name} missed you!`, "success");
-
-      // Restore sleep button state
-      if (this.pet.state === "sleeping") {
-        const sleepBtn = document.getElementById("btn-sleep");
-        if (sleepBtn) sleepBtn.textContent = "☀️ Wake Up";
-      }
 
       this._startLoop();
       this._updateDayNight();
     } catch (e) {
-      // Corrupted save — show select screen
       sessionStorage.removeItem("virtual_pet_save");
       this.ui.showSelectScreen();
     }

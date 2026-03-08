@@ -119,8 +119,10 @@ class Pet {
     this.happiness = Math.min(100, this.happiness + 8);
     this.health    = Math.min(100, this.health + 3);
     this.xp        += 5;
-    this.feedCooldown = 4; // 4 tick cooldown (~20s)
+    this.feedCooldown = 4;
 
+    // Force awake state so _updateState() can compute correctly
+    if (this.state === "sleeping") this.state = "neutral";
     this._updateState();
     return `😋 ${this.name} enjoyed the meal! Yum yum!`;
   }
@@ -135,16 +137,14 @@ class Pet {
     if (this.energy < 15) return "😓 " + this.name + " is too tired to play!";
     if (this.playCooldown > 0) return "😤 " + this.name + " needs a little break!";
 
-    const happinessGain = 25;
-    const energyCost    = 20;
-    const hungerCost    = 10; // Playing makes you hungry
-
-    this.happiness = Math.min(100, this.happiness + happinessGain);
-    this.energy    = Math.max(0, this.energy - energyCost);
-    this.hunger    = Math.min(100, this.hunger + hungerCost);
+    this.happiness = Math.min(100, this.happiness + 25);
+    this.energy    = Math.max(0,   this.energy    - 20);
+    this.hunger    = Math.min(100, this.hunger    + 10);
     this.xp        += 8;
     this.playCooldown = 3;
 
+    // Force awake state so _updateState() can compute correctly
+    if (this.state === "sleeping") this.state = "neutral";
     this._updateState();
     return `🎉 ${this.name} had so much fun! Look at those happy eyes!`;
   }
@@ -243,15 +243,21 @@ class Pet {
   // ══════════════════════════════════════════════════════════
 
   _updateState() {
-    if (!this.isAlive) { this.state = "dead"; return; }
-    if (this.state === "sleeping") return; // Don't override sleep
+    // Always handle dead/sleeping first — never override these
+    if (!this.isAlive)            { this.state = "dead";    return; }
+    if (this.state === "sleeping") return; // sleeping can only be exited by wake()
 
-    if (this.health < 30)        { this.state = "sick";    return; }
-    if (this.hunger > 75)        { this.state = "hungry";  return; }
-    if (this.energy < 20)        { this.state = "tired";   return; }
-    if (this.happiness < 25)     { this.state = "sad";     return; }
-    if (this.happiness > 70 && this.hunger < 50 && this.energy > 40) {
-                                   this.state = "happy";   return; }
+    // Priority order: worst condition wins
+    if (this.health < 30)         { this.state = "sick";    return; }
+    if (this.hunger > 70)         { this.state = "hungry";  return; }
+    if (this.energy < 25)         { this.state = "tired";   return; }
+    if (this.happiness < 30)      { this.state = "sad";     return; }
+
+    // Happy: well-fed, energised, content
+    if (this.happiness >= 60 && this.hunger < 60 && this.energy >= 40) {
+                                    this.state = "happy";   return; }
+
+    // Everything else is neutral
     this.state = "neutral";
   }
 
@@ -281,6 +287,14 @@ class Pet {
     const p = new Pet(data.type, data.name);
     Object.assign(p, data);
     p.typeData = PET_TYPES[data.type];
+    // If pet was saved mid-sleep, wake it up so it
+    // doesn't load permanently stuck in sleeping animation
+    if (p.state === "sleeping") {
+      p.state = "neutral";
+      p.sleepCooldown = 0;
+    }
+    // Re-derive correct state from current stats
+    p._updateState();
     return p;
   }
 }
